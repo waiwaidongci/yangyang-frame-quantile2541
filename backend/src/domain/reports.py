@@ -22,7 +22,8 @@ def project_row(source: dict, columns: dict) -> dict:
     return {key: source[key] for key in columns}
 
 
-def shift_queue(shots: list[dict], shift_minutes: int) -> tuple[dict, int, int]:
+def shift_queue(shots: list[dict], shift_minutes: int = 240,
+                model_version: str | None = None) -> tuple[dict, int, int]:
     ordered = sorted(shots, key=lambda row: (row["due_minutes"], -row["p90_minutes"], row["id"]))
     elapsed = scheduled = 0
     rows = []
@@ -49,7 +50,15 @@ def shift_queue(shots: list[dict], shift_minutes: int) -> tuple[dict, int, int]:
         "reserve_minutes": "P90 向上取整预留分钟", "start_minute": "开班后开始分钟",
         "finish_minute": "开班后完成分钟", "action": "排班建议", "reason": "建议依据",
     }
-    return table("shift_queue", "擦线班交接工时单", labels, rows), scheduled, elapsed
+    versions = {row.get("model_version") for row in shots if row.get("model_version") is not None}
+    if len(versions) > 1:
+        raise ValueError("一次排班只能使用同一个模型版本。")
+    inferred_version = next(iter(versions)) if versions else None
+    if model_version is not None and inferred_version is not None and model_version != inferred_version:
+        raise ValueError("一次排班只能使用同一个模型版本。")
+    result = table("shift_queue", "擦线班交接工时单", labels, rows)
+    result["model_version"] = model_version or inferred_version
+    return result, scheduled, elapsed
 
 
 def pinball_table(comparison: list[dict]) -> dict:
@@ -82,8 +91,11 @@ def scene_manifest(shots: list[dict]) -> dict:
     return table("scene_manifest", "数据分区与场次清单", labels, rows)
 
 
-def model_profile(settings: dict, baselines: dict[int, float]) -> dict:
-    rows = [{"parameter": item["key"], "description": item["label"], "value": settings[item["key"]]} for item in SETTINGS]
+def model_profile(settings: dict, baselines: dict[int, float], model_version: str | None = None) -> dict:
+    rows = []
+    if model_version is not None:
+        rows.append({"parameter": "model_version", "description": "本次排班固定使用的模型版本", "value": model_version})
+    rows.extend({"parameter": item["key"], "description": item["label"], "value": settings[item["key"]]} for item in SETTINGS)
     rows.extend({"parameter": f"baseline_p{q}", "description": f"历史常量 P{q}（分钟）", "value": value}
                 for q, value in baselines.items())
     return table("model_profile", "冻结模型与工位参数", {"parameter": "设置项", "description": "口径", "value": "取值"}, rows)

@@ -14,5 +14,14 @@ class Run(Base):
     created_at: Mapped[str] = mapped_column(String(32))
     status: Mapped[str] = mapped_column(String(16), index=True)
     settings: Mapped[dict] = mapped_column(JSON)
+    model_version: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
     result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     error: Mapped[str | None] = mapped_column(Text)
+
+    @property
+    def version(self) -> str | None:
+        return self.model_version
+
+    @version.setter
+    def version(self, value: str | None) -> None:
+        self.model_version = value

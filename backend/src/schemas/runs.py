@@ -17,4 +17,5 @@ class RunInfo(BaseModel):
     created_at: str
     status: RunStatus
     settings: dict
+    model_version: str | None = None
     decision: str | None

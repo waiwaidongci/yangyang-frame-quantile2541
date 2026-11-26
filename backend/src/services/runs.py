@@ -14,7 +14,7 @@ from src.utils.time import utc_stamp
 
 
 def run_info(run, review):
-    fields = ('id', 'label', 'dataset_id', 'created_at', 'status', 'settings')
+    fields = ('id', 'label', 'dataset_id', 'created_at', 'status', 'settings', 'model_version')
     return {**{key: getattr(run, key) for key in fields}, 'decision': review.decision if review else None}
 
 

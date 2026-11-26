@@ -30,7 +30,9 @@ API 默认绑定 `127.0.0.1:19434`，PostgreSQL 16 绑定 `127.0.0.1:17934`。�
 | `GET /api/datasets` | 台账列表及记录数、校验和 |
 | `POST /api/datasets` | JSON `name` 和 `csv`，其中 `csv` 是完整 UTF-8 CSV 内容 |
 | `POST /api/runs` | JSON `dataset_id`、`label`、`settings`，返回 `202` 和运行 ID。`settings: {}` 采用默认参数 |
-| `GET /api/runs/{id}` | 查询 worker 状态及结果。完成后返回 `result.summary`、`metrics`、`tables`、`warnings` |
+| `POST /api/models/publish` | 用同一台账留出镜头评分候选模型；两档 Pinball 均不高于当前在用版本时原子切换 |
+| `GET /api/models/active` | 查看当前在用模型版本及两档 Pinball |
+| `GET /api/runs/{id}` | 查询 worker 状态及结果。完成后返回 `result.summary`、`metrics`、`tables`、`warnings` 和 `model_version` |
 | `POST /api/runs/{id}/review` | 负责人在计算完成后提交 `decision` 和 `note`，通过取值 `approved` |
 | `GET /api/runs/{id}/export/{key}` | 下载对应的 UTF-8 CSV，需运行已获批准 |
 
@@ -40,6 +42,6 @@ API 默认绑定 `127.0.0.1:19434`，PostgreSQL 16 绑定 `127.0.0.1:17934`。�
 | `holdout_metrics` | 全部留出和分场次的模型及常量 Pinball、覆盖率 |
 | `holdout_shots` | 留出镜头的输入、P50/P90 和实测工时 |
 | `scene_manifest` | 历史、留出、待排场次及各自镜头数 |
-| `model_profile` | 本次固定的提升参数、班次容量和训练常量分位 |
+| `model_profile` | 本次使用的模型版本、固定的提升参数、班次容量和训练常量分位 |
 
 `backend/src/domain/` 提供确定性的 Python 模型、校验和报告。路由位于 `backend/src/routes/`，工作流位于 `backend/src/services/`。JWT 用户角色、运行状态与审批决定由 `backend/src/constants/workflow.py` 定义，分别用于鉴权、worker 领取与轮询、结果可见性和导出。领域模型使用 Python 标准库。
